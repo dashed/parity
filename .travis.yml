@@ -1,34 +1,40 @@
 sudo: required
-dist: trusty
+# dist: trusty
 language: rust
 
 branches:
   only:
   - master
+  - rust-everywhere
   - /^beta-.*$/
   - /^stable-.*$/
   - /^beta$/
   - /^stable$/
+  - /^d\d+\.\d+\.\d+.*$/
 
 git:
   depth: 3
 
 matrix:
   include:
-  - rust: stable
-    env: FEATURES="--features travis-beta" RUN_TESTS="true"
-  - rust: beta
-    env: FEATURES="--features travis-beta" RUN_COVERAGE="true"
+  - os: osx
+    rust: stable
+    env: TARGET=x86_64-apple-darwin FEATURES="--features travis-beta"
+  # - rust: stable
+  #   env: FEATURES="--features travis-beta" RUN_TESTS="true"
+  # - rust: beta
+  #   env: FEATURES="--features travis-beta" RUN_COVERAGE="true"
 
 env:
   global:
-  - CXX="g++-4.8"
-  - CC="gcc-4.8"
+  - PROJECT_NAME=parity
+  # - CXX="g++-4.8"
+  # - CC="gcc-4.8"
   - RUST_BACKTRACE="1"
   - RUN_TESTS="false"
   - RUN_COVERAGE="false"
   # GH_TOKEN for documentation
-  - secure: bumJASbZSU8bxJ0EyPUJmu16AiV9EXOpyOj86Jlq/Ty9CfwGqsSXt96uDyE+OUJf34RUFQMsw0nk37/zC4lcn6kqk2wpuH3N/o85Zo/cVZY/NusBWLQqtT5VbYWsV+u2Ua4Tmmsw8yVYQhYwU2ZOejNpflL+Cs9XGgORp1L+/gMRMC2y5Se6ZhwnKPQlRJ8LGsG1dzjQULxzADIt3/zuspNBS8a2urJwlHfGMkvHDoUWCviP/GXoSqw3TZR7FmKyxE19I8n9+iSvm9+oZZquvcgfUxMHn8Gq/b44UbPvjtFOg2yam4xdWXF/RyWCHdc/R9EHorSABeCbefIsm+zcUF3/YQxwpSxM4IZEeH2rTiC7dcrsKw3XsO16xFQz5YI5Bay+CT/wTdMmJd7DdYz7Dyf+pOvcM9WOf/zorxYWSBOMYy0uzbusU2iyIghQ82s7E/Ahg+WARtPgkuTLSB5aL1oCTBKHqQscMr7lo5Ti6RpWLxEdTQMBznc+bMr+6dEtkEcG9zqc6cE9XX+ox3wTU6+HVMfQ1ltCntJ4UKcw3A6INEbw9wgocQa812CIASQ2fE+SCAbz6JxBjIAlFUnD1lUB7S8PdMPwn9plfQgKQ2A5YZqg6FnBdf0rQXIJYxQWKHXj/rBHSUCT0tHACDlzTA+EwWggvkP5AGIxRxm8jhw=
+  # - secure: bumJASbZSU8bxJ0EyPUJmu16AiV9EXOpyOj86Jlq/Ty9CfwGqsSXt96uDyE+OUJf34RUFQMsw0nk37/zC4lcn6kqk2wpuH3N/o85Zo/cVZY/NusBWLQqtT5VbYWsV+u2Ua4Tmmsw8yVYQhYwU2ZOejNpflL+Cs9XGgORp1L+/gMRMC2y5Se6ZhwnKPQlRJ8LGsG1dzjQULxzADIt3/zuspNBS8a2urJwlHfGMkvHDoUWCviP/GXoSqw3TZR7FmKyxE19I8n9+iSvm9+oZZquvcgfUxMHn8Gq/b44UbPvjtFOg2yam4xdWXF/RyWCHdc/R9EHorSABeCbefIsm+zcUF3/YQxwpSxM4IZEeH2rTiC7dcrsKw3XsO16xFQz5YI5Bay+CT/wTdMmJd7DdYz7Dyf+pOvcM9WOf/zorxYWSBOMYy0uzbusU2iyIghQ82s7E/Ahg+WARtPgkuTLSB5aL1oCTBKHqQscMr7lo5Ti6RpWLxEdTQMBznc+bMr+6dEtkEcG9zqc6cE9XX+ox3wTU6+HVMfQ1ltCntJ4UKcw3A6INEbw9wgocQa812CIASQ2fE+SCAbz6JxBjIAlFUnD1lUB7S8PdMPwn9plfQgKQ2A5YZqg6FnBdf0rQXIJYxQWKHXj/rBHSUCT0tHACDlzTA+EwWggvkP5AGIxRxm8jhw=
   - KCOV_CMD="./kcov-master/tmp/usr/local/bin/kcov"
 
 cache:
@@ -59,16 +65,49 @@ install:
       make && make install DESTDIR=../tmp &&
       cd
     )
+  - bash ci/install.sh
 
 script:
   - if [ "$RUN_TESTS" = "true" ]; then ./test.sh; fi
   - if [ "$RUN_COVERAGE" = "true" ]; then ./scripts/cov.sh "$KCOV_CMD"; fi
+  - bash ci/script.sh
 
-after_success: |
-  [ $TRAVIS_BRANCH = master ] &&
-  [ $TRAVIS_PULL_REQUEST = false ] &&
-  [ $TRAVIS_RUST_VERSION = stable ] &&
-  ./scripts/doc.sh &&
-  pip install --user ghp-import &&
-  /home/travis/.local/bin/ghp-import -n target/doc &&
-  git push -fq https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages
+# after_success: |
+#   [ $TRAVIS_BRANCH = master ] &&
+#   [ $TRAVIS_PULL_REQUEST = false ] &&
+#   [ $TRAVIS_RUST_VERSION = stable ] &&
+#   ./scripts/doc.sh &&
+#   pip install --user ghp-import &&
+#   /home/travis/.local/bin/ghp-import -n target/doc &&
+#   git push -fq https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages
+
+### rust-everywhere ###
+
+
+before_install:
+  - export PATH="$PATH:$HOME/.cargo/bin"
+
+before_deploy:
+  - bash ci/before_deploy.sh
+
+deploy:
+  provider: releases
+  # TODO Regenerate this api_key for your project, this one won't work for you. Here's how:
+  # - Go to 'https://github.com/settings/tokens/new' and generate a Token with only the
+  # `public_repo` scope enabled
+  # - Call `travis encrypt $github_token` where $github_token is the token you got in the previous
+  # step and `travis` is the official Travis CI gem (see https://rubygems.org/gems/travis/)
+  # - Enter the "encrypted value" below
+  api_key:
+    secure: "YDa6B7v8s5Vj7As5Kw/my0MOgMyC6lgQjscWOGYVOA2480jy32VU2TDcxgu5tWvFFAYPdZmlW/OxGenOxDUWX2QGMX+w9NybMz4FQtKa20tuEMxt+9DoewduSVMCSkEkKAQWNgegNgRX8H9gLTbke0ROinF9za4ccfP/vEfK+C2veSTR9xccIxIeqDaYft8tqgQrbRc4aTSOd6VUOzlvHpZbo/jps8PVUHifUTLzMlm1xWyTyTJd8CY13MVZ+uG05O7Pdngjmr0jLQJ+8KOpsHpE96QgJOypyzZWgGWpjx30JMv6lW9yQbVvYXiDTHniv/Kya6kT4V2TVuNyTI8+aj8+4VAyJ8KtK5ptkYMNP0XlLgDOZkw0fdVJLth5AFiYdWWnINJrBSfCcsEYaCL5tlvCQveXUXWzIrNmXrZVbSvyjE7IDOOQLuqbxZggYo0+ovWsch0Hb57Iga3J3aXwv5MSSZm2fiBcvHoVnVna/irNrtWZYivJohFATrd81mEdremQ9chnsQwhSJ4yGZJLecGj/jaKTlQoInvE4/JiWeiRUyumDQiTvANiA/RW93yixGitzqsC9H7/gjcIL46GOXgT5IlzMKIGA7mLwN77ny8HaMmpGxc+a1p93Dn1vhdj4Tf+wVLDy91UMkD+8shrJX0b3xbl6Zdnr12m1ddOTqA="
+  file_glob: true
+  file: ${PROJECT_NAME}-${TRAVIS_TAG}-${TARGET}.*
+  # don't delete the artifacts from previous phases
+  skip_cleanup: true
+  # deploy when a new tag is pushed
+  on:
+    # channel to use to produce the release artifacts
+    # NOTE make sure you only release *once* per target
+    # TODO you may want to pick a different channel
+    condition: $TRAVIS_RUST_VERSION = stable
+    tags: true
